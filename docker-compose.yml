@@ -1,0 +1,93 @@
+version: '3'
+
+services:
+  redis-replica-0:
+    image: redis
+    container_name: redis-replica-0
+    command: redis-server --appendonly yes --requirepass redispassword --masterauth redispassword
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.2
+
+  redis-replica-1:
+    image: redis
+    container_name: redis-replica-1
+    command: redis-server --appendonly yes --requirepass redispassword --masterauth redispassword
+    restart: on-failure
+    ports:
+      - "6380:6379"
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.3
+
+  redis-replica-2:
+    image: redis
+    container_name: redis-replica-2
+    command: redis-server --appendonly yes --requirepass redispassword --masterauth redispassword
+    restart: on-failure
+    ports:
+      - "6381:6379"
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.4
+
+  redis-sentinel-0:
+    image: redis
+    container_name: redis-sentinel-0
+    command: redis-sentinel /data/sentinel.conf --sentinel --protected-mode no
+    restart: on-failure
+    ports:
+      - "26379:26379"
+    volumes:
+      - ./sentinel0:/data
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.5
+
+  redis-sentinel-1:
+    image: redis
+    container_name: redis-sentinel-1
+    command: redis-sentinel /data/sentinel.conf --sentinel --protected-mode no
+    restart: on-failure
+    ports:
+      - "26380:26379"
+    volumes:
+      - ./sentinel1:/data
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.6
+
+  redis-sentinel-2:
+    image: redis
+    container_name: redis-sentinel-2
+    command: redis-sentinel /data/sentinel.conf --sentinel --protected-mode no
+    restart: on-failure
+    ports:
+      - "26381:26379"
+    volumes:
+      - ./sentinel2:/data
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.7
+
+  redis-client:
+    build: ./client
+    container_name: redis-client
+    restart: always
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.8
+    depends_on:
+      - redis-sentinel-0
+      - redis-sentinel-1
+      - redis-sentinel-2
+
+networks:
+  redis-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
